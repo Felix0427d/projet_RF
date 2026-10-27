@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-sdr = adi.Pluto(uri="ip:pluto.local")
+sdr = adi.Pluto(uri="usb:1.9.5")
 
 # ---- TX : génère la CW ----
 sdr.tx_lo = 433_000_000
@@ -21,7 +21,7 @@ sdr.sample_rate = 2_000_000
 sdr.rx_rf_bandwidth = 2_000_000
 sdr.rx_buffer_size = 4096
 sdr.gain_control_mode_chan0 = "manual"
-sdr.rx_hardwaregain_chan0 = 40
+sdr.rx_hardwaregain_chan0 = 30
 
 time.sleep(0.5)
 sdr.rx()  # premier appel à vider (buffer de transition)
