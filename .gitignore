@@ -1,0 +1,15 @@
+# Environnements Python locaux
+.venv/
+venv/
+env/
+.env/
+
+# Fichiers temporaires Python
+__pycache__/
+*.pyc
+
+# Fichiers VS Code locaux
+.vscode/
+
+# Résultats temporaires de simulation
+*.log
