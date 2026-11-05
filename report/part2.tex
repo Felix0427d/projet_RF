@@ -1,0 +1,98 @@
+\subsection{Objective and experimental approach}
+
+The first phase establishes the transmission and reception chain required for
+the later direction-of-arrival experiments. Its purpose is to generate
+repeatable radio signals, acquire their complex in-phase and quadrature
+samples with an SDR (I/Q), and inspect or recover information from those samples.
+
+\subsection{Preliminary laboratory experiments}
+
+In the first laboratory exercise, an ESP32-C3 is configured to broadcast
+packets using ESP-NOW on Wi-Fi channel 1, whose centre frequency is
+\(2412~\mathrm{MHz}\). The transmitter selects a PHY rate of \(6~\mathrm{Mbit/s}\)
+and broadcasts a packet every \(250~\mathrm{ms}\). Each packet contains a
+constant identifier, a sequence number, a sample index, and one value from a
+small test data set. This provides a repeatable 2.4~GHz radio transmission
+whose packets can be used to explore reception and signal observation.
+
+The Pluto SDR scripts also use a continuous-wave (CW) signal as a simple
+frequency reference. In the laboratory setup, the transmitter and receiver
+local oscillators are set to \(433~\mathrm{MHz}\), while the transmitter's
+digital tone is offset by \(100~\mathrm{kHz}\). The resulting signal is
+therefore expected near \(433.1~\mathrm{MHz}\). With a sampling rate and
+receiver bandwidth of \(2~\mathrm{MHz}\), the captured I/Q buffer can be
+transformed using a fast Fourier transform (FFT). The frequency of the largest
+spectral bin gives an estimate of the received tone's offset from the receiver
+local oscillator.
+
+The second laboratory script extends this measurement with a live spectrum
+display. Before calculating the FFT, it applies a Hann window to the samples
+to reduce spectral leakage caused by observing a finite data buffer. The
+frequency axis is shifted so that zero frequency is at the centre, then
+translated by the receiver's local-oscillator frequency to display absolute
+frequency. A marker indicates the largest spectral peak. These exercises
+introduce the receiver settings and analysis techniques used in the project;
+the \(433~\mathrm{MHz}\) CW test is a preliminary measurement and is distinct
+from the project's 2.4~GHz transmission.
+
+\subsection{2.4~GHz transmission and I/Q acquisition}
+
+The ESP-NOW transmitter is paired with a Pluto SDR receiver implemented as a
+GNU Radio flowgraph. It is tuned to \(2412~\mathrm{MHz}\) and samples at
+\(20~\mathrm{MSample/s}\). The flowgraph passes the received samples to an
+IEEE 802.11 physical-layer decoder, then examines the decoded frame for the
+test packet identifier and expected data values. Sequence numbers also make
+it possible to report gaps in the received packet stream. This experiment
+demonstrates packet reception over the air, in addition to the raw spectrum
+measurements of the CW exercises.
+
+The project also includes a Pluto SDR CW transmitter configured with a
+\(2.4~\mathrm{GHz}\) local oscillator and a \(100~\mathrm{kHz}\) digital tone,
+placing the emitted tone at approximately \(2.4001~\mathrm{GHz}\). A separate
+basic receiver script tunes to \(2.4~\mathrm{GHz}\), samples at
+\(2~\mathrm{MSample/s}\), and prints a captured I/Q buffer. This is a raw
+acquisition check; it does not attempt to decode a message.
+
+\paragraph{BPSK waveform and recovery.}
+
+For the project signal, the BPSK script configures the Pluto SDR transmitter
+and receiver at a carrier frequency of \(2.4~\mathrm{GHz}\), with a sampling
+rate of \(1~\mathrm{MSample/s}\). It generates a reproducible frame of
+\(1024\) pseudo-random bits. Each bit is mapped to one of two antipodal
+symbols, \(-1\) or \(+1\), and repeated for eight samples. The corresponding
+symbol rate is
+\[
+    R_s = \frac{f_s}{N_s}
+        = \frac{1~\mathrm{MSample/s}}{8}
+        = 125~\mathrm{ksymbol/s},
+\]
+where \(f_s\) is the sampling rate and \(N_s\) is the number of samples per
+symbol. The resulting complex-valued waveform is transmitted cyclically,
+allowing the receiver to capture repeated copies of the same known frame.
+
+The receiver acquires complex samples \(x[n]=I[n]+jQ[n]\). One initial
+acquisition is discarded after configuration to avoid using a transition
+buffer. The received samples are then processed to compensate for a constant
+phase rotation, integrate over each symbol with an eight-sample rectangular
+filter, and select the best of the eight possible sample timings. Because the
+transmitted frame is known, correlation is used to find its alignment in the
+received buffer and resolve the possible BPSK sign ambiguity. A hard decision
+on the real part of each recovered symbol produces the estimated bit sequence.
+The script compares it with the original bits and reports the bit-error rate
+(BER); it also displays the recovered constellation and received spectrum.
+
+\subsection{Phase 1 outcome and scope}
+
+Together, the laboratory work and project scripts demonstrate how to generate
+a known RF waveform, configure an SDR receiver, inspect the received spectrum,
+and recover a digital sequence from I/Q samples. They also provide a
+repeatable signal-processing chain that can be used to check transmission and
+acquisition settings. The scripts report measurements such as the detected
+frequency and BER when run, but no fixed numerical results are included here
+because they depend on the hardware setup and the individual acquisition.
+
+These experiments use a single receive channel for the BPSK recovery and
+spectrum measurements. They therefore do not, on their own, estimate the
+direction of arrival. Spatial phase comparison across multiple receive
+channels, together with calibration, is required for that task and is
+addressed in the following phase.
