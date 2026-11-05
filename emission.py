@@ -1,7 +1,7 @@
 import adi
 import time
 
-sdr = adi.Pluto(uri="usb:1.9.5")  # ou l'URI détectée automatiquement
+sdr = adi.ad9361(uri="usb:1.9.5")  # ou l'URI détectée automatiquement
 
 # ---- TX : CW autour de 3 GHz ----
 sdr.tx_lo = 2_400_000_000       # fréquence centrale TX : 3 GHz

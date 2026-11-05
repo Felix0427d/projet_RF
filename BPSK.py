@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-sdr = adi.Pluto(uri="usb:1.15.5")
+sdr = adi.ad9361(uri="usb:1.15.5")
 
 # ---- Paramètres ----
 fc = 2_400_000_000          # fréquence porteuse (TX et RX)
