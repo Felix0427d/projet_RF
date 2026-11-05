@@ -1,0 +1,26 @@
+\noindent
+Radio direction finding is the process of estimating the direction from which a
+radio signal arrive. It is an important capability in wireless systems, where
+locating a transmitter can support monitoring, signal tracking, and a better
+understanding of the radio environment. This project investigates a practical
+approach to direction-of-arrival estimation using software-defined radio (SDR)
+and beamforming.
+
+\medskip
+\noindent
+The system is developed in three phases. First, a signal in the 2.4~GHz band is
+transmitted and its in-phase and quadrature (I/Q) samples are acquired using an
+ADALM-Pluto SDR. These samples provide the complex signal data needed for
+digital processing. Second, beamforming techniques are explored to combine
+signals received at multiple antenna elements and estimate the direction of
+the source, with the aim of following changes in its position. Most of the calculation are done with
+the help of our telecommunications knowledge, Acquierd with Mr Tihion. Finally, an
+antenna is designed for the system, considering the requirements of operation
+at the target frequency.
+
+\medskip
+\noindent
+Together, these phases form an end-to-end study, from signal transmission and
+acquisition to spatial processing and antenna design. The report presents the
+approach and results of each phase, and discusses the practical constraints
+encountered when implementing a direction-finding system with SDR hardware.
