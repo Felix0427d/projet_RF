@@ -1,30 +1,58 @@
-\section{antenna design}
 
-In this section we will discuss about the part of design of the antenna working in the range of wifi 2.4 GHz. The antenna was build with \href{https://www.emerge-software.com}{Emerge}. 
-The specification of the antenna is.
+\section{Antenna Design}
 
-\begin{table}[h]
-	\centering
-	\caption{Antenna specifications}
-	\label{tab:antenna-specifications}
-	\begin{tabular}{|l|l|}
-		\hline
-		Specification & Value \\
-		\hline
-		Operating frequency & 2.4~GHz \\
-		\hline
-		Antenna type & To be specified \\
-		\hline
-		Substrate material & To be specified \\
-		\hline
-		Substrate thickness & To be specified \\
-		\hline
-		Gain & To be specified \\
-		\hline
-		Input impedance & 50~$\Omega$ \\
-		\hline
-		Polarization & To be specified \\
-		\hline
-	\end{tabular}
+This section presents the design and simulation of an antenna
+operating in the 2.4 GHz Wi-Fi frequency band. The antenna
+is designed and optimized using \href{https://www.emerge-software.com}
+{EMerge}, a 3D electromagnetic simulation software.
+
+The objective is to achieve a compromise between antenna gain,
+bandwidth, radiation efficiency, and physical dimensions.
+
+The target specifications are summarized in
+Table~\ref{tab:antenna-specifications}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Target antenna specifications}
+    \label{tab:antenna-specifications}
+    \begin{tabular}{|l|l|}
+        \hline
+        \textbf{Specification} & \textbf{Target value} \\
+        \hline
+        Frequency band & 2.400--2.4835 GHz \\
+        \hline
+        Center frequency & 2.45 GHz \\
+        \hline
+        Antenna type & Microstrip patch / patch array \\
+        \hline
+        Substrate material & FR-4 (initial choice) \\
+        \hline
+        Relative permittivity & $\varepsilon_r \approx 4.4$ \\
+        \hline
+        Substrate thickness & 1.6 mm \\
+        \hline
+        Input impedance & 50 $\Omega$ \\
+        \hline
+        Polarization & Linear \\
+        \hline
+        Impedance bandwidth & $\geq 83.5$ MHz \\
+        \hline
+        Return loss ($S_{11}$) & $\leq -10$ dB \\
+        \hline
+        VSWR & $\leq 2$ \\
+        \hline
+        Realized gain (single patch) & $\geq 5$ dBi \\
+        \hline
+        Realized gain (2$\times$2 array) & $\geq 9$ dBi \\
+        \hline
+        Radiation efficiency & $\geq 70\%$ \\
+        \hline
+        Radiation pattern & Directional (broadside) \\
+        \hline
+        Feeding technique & 50 $\Omega$ microstrip line \\
+        \hline
+        Antenna dimensions & To be optimized \\
+        \hline
+    \end{tabular}
 \end{table}
-
