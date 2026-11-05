@@ -1,15 +1,44 @@
-# Environnements Python locaux
+
+# ==========================================
+# ENVIRONNEMENTS PYTHON
+# ==========================================
 .venv/
 venv/
 env/
 .env/
 
-# Fichiers temporaires Python
+# ==========================================
+# FICHIERS TEMPORAIRES PYTHON
+# ==========================================
 __pycache__/
 *.pyc
+*.pyo
+.pytest_cache/
 
-# Fichiers VS Code locaux
+# ==========================================
+# EDITEURS
+# ==========================================
 .vscode/
+.idea/
 
-# Résultats temporaires de simulation
+# ==========================================
+# RAPPORT LATEX
+# ==========================================
+# Ignorer tous les fichiers du dossier report
+/report/**
+
+# Conserver les sous-dossiers
+!/report/**/
+
+# Autoriser les fichiers source LaTeX
+!/report/**/*.tex
+
+# ==========================================
+# FICHIERS TEMPORAIRES
+# ==========================================
 *.log
+*.tmp
+*.bak
+*~
+.DS_Store
+Thumbs.db
