@@ -1,0 +1,97 @@
+\subsection{Objective}
+
+In Phase 2, we use the phase difference between two antennas to estimate the
+direction of arrival (DoA) of a signal. The current program uses two receive
+channels to estimate this angle (\texttt{decode.py}). It is a first step
+towards beamforming and source tracking. It is not yet a complete system.
+
+\subsection{Principle of phase-based direction estimation}
+
+Consider two antennas with a distance \(d\) between them. We measure the
+arrival angle \(\theta\) from broadside. Broadside is the direction
+perpendicular to the line between the antennas, so \(\theta=0\) means the
+wave arrives from that direction. The difference in the distances travelled
+by the wave is
+\[
+    \Delta \ell = d\sin(\theta).
+\]
+For a signal with wavelength \(\lambda\), this distance difference creates a
+phase difference
+\[
+    \Delta\phi
+    = \frac{2\pi}{\lambda}\Delta\ell
+    = \frac{2\pi d}{\lambda}\sin(\theta),
+    \qquad
+    \lambda = \frac{c}{f},
+\]
+Here, \(f\) is the signal frequency and \(c\) is the speed of light. We can
+use the measured phase difference to estimate the angle:
+\[
+    \theta
+    = \arcsin\!\left(\frac{\Delta\phi\,\lambda}{2\pi d}\right).
+\]
+The measured phase repeats every \(2\pi\). Because of this, the estimate also
+depends on the antenna spacing, calibration and angle range.
+
+\subsection{Two-channel acquisition and signal processing}
+
+The program sets up two receive channels and reads both signals at the same
+time. It uses a \(2.437~\mathrm{GHz}\) signal, a sample rate of
+\(2~\mathrm{MSample/s}\) and buffers of \(16{,}384\) samples
+(\texttt{decode.py}). The receiver is tuned \(200~\mathrm{kHz}\) below the
+expected signal frequency. This moves the tone away from zero frequency in
+the sampled signal.
+
+For each buffer, the program applies a Hann window and computes an FFT for
+each channel. It then finds the strongest frequency bin in the selected band.
+Let \(X_1[k]\) and \(X_2[k]\) be the complex FFT values from channels 1 and 2
+at bin \(k\). We multiply one value by the complex conjugate of the other:
+\[
+    C[k] = X_2[k]X_1^{*}[k],
+\]
+Here, \(X_1^{*}[k]\) is the complex conjugate of \(X_1[k]\). The phase
+difference is the angle of this product:
+\[
+    \Delta\phi[k]
+    = \arg\!\left(C[k]\right)
+    = \arg\!\left(X_2[k]\right)-\arg\!\left(X_1[k]\right).
+\]
+The program repeats this calculation for several buffers and averages the
+results. For \(M\) buffers, the average is
+\[
+    \overline{C}
+    = \frac{1}{M}\sum_{m=1}^{M}
+      X_{2,m}[k_m]X_{1,m}^{*}[k_m],
+\]
+The phase estimate is the angle of this average. Averaging helps reduce noise.
+
+At startup, the program averages 50 measurements to get a calibration value.
+During operation, it averages 10 measurements at a time, removes the
+calibration offset and smooths the phase estimate. It then uses the wavelength
+and antenna spacing to calculate the angle. If the result is outside the
+valid range for the inverse sine, the program reports that the angle is out
+of range.
+
+\subsection{Effect of antenna spacing}
+
+At \(2.437~\mathrm{GHz}\), the wavelength is about \(0.123~\mathrm{m}\). The
+program uses an antenna spacing of \(0.0615~\mathrm{m}\), about half a
+wavelength (\texttt{decode.py}). A larger spacing gives a larger phase
+change for the same change in angle, which can make the measurement more
+sensitive. But if the spacing is too large, different angles can give the
+same measured phase. This makes the angle unclear. A spacing no greater than
+half a wavelength helps avoid this problem over the main angle range.
+
+We also need to know the spacing accurately and calibrate both receive
+channels. Cables, antennas, receiver differences and reflections can all
+change the measured phase. The program corrects a fixed phase difference
+between the channels. We still need to choose and test a known reference
+direction.
+
+\subsection{Code example}
+
+
+
+Le firmware de l'ESP32, il est où, wesh ?
+
+\subsection{Results}
