@@ -11,7 +11,7 @@ Next, we used the Python library pyadi-iio (called \texttt{adi} in Python) to
 control the Pluto SDR. We used the Pluto to generate a simple continuous-wave
 (CW) signal and to receive radio samples. We changed settings such as the
 transmit and receive frequencies, sample rate, bandwidth and gain
-(\texttt{emission.py}; \texttt{lab1.py}).
+(\href{https://github.com/Felix0427d/projet_RF/blob/felix/emission.py}{\texttt{emission.py}}; \href{https://github.com/Felix0427d/projet_RF/blob/felix/lab\%201/lab1.py}{\texttt{lab1.py}}).
 
 This code excerpt shows how to generate a tone and capture receiver samples.
 The device URI depends on the laboratory setup.
@@ -34,7 +34,7 @@ was transmitting at about the right frequency.
 
 We also used an FFT to view the spectrum of samples received by the SDR. The
 live display uses a Hann window to reduce spectral leakage
-(\texttt{lab1.py}; \texttt{Spectrum\_Analysis.py}). The spectrum analyser
+(\href{https://github.com/Felix0427d/projet_RF/blob/felix/lab\%201/lab1.py}{\texttt{lab1.py}}; \href{https://github.com/Felix0427d/projet_RF/blob/felix/lab\%202/Spectrum_Analysis.py}{\texttt{Spectrum\_Analysis.py}}). The spectrum analyser
 measures the transmitted signal directly. The software FFT is calculated from
 the I/Q samples. The \(433~\mathrm{MHz}\) test was an early exercise and is
 separate from the later \(2.4~\mathrm{GHz}\) tests.
