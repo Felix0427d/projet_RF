@@ -4,7 +4,7 @@
 #include <esp_wifi.h>
 
 namespace {
-constexpr uint8_t wifi_channel = 1;
+constexpr uint8_t wifi_channel = 7;
 constexpr uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 constexpr int16_t data_set[] = {120, 240, 360, 480};
 constexpr size_t data_set_size = sizeof(data_set) / sizeof(data_set[0]);
