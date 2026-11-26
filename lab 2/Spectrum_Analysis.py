@@ -2,9 +2,13 @@ import adi
 import time
 import matplotlib.pyplot as plt
 import numpy as np
+import iio
 
-
-sdr = adi.Pluto(uri="usb:1.9.5")
+uri = next((u for u, d in iio.scan_contexts().items() if "PlutoSDR" in d), None)
+if uri is None:
+    raise RuntimeError("Aucun Pluto détecté.")
+print("URI :", uri)
+sdr = adi.ad9361(uri=uri)
 
 # ---- TX : génère la CW ----
 sdr.tx_lo = 433_000_000
