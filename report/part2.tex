@@ -42,16 +42,21 @@ separate from the later \(2.4~\mathrm{GHz}\) tests.
 \subsection{Using the ESP32 as an independent transmitter}
 
 After these tests, we used an ESP32-C3 to send ESP-NOW packets and the Pluto
-SDR to receive them. The ESP32 uses Wi-Fi channel 1, centred at
-\(2412~\mathrm{MHz}\), and sends one packet every \(250~\mathrm{ms}\). Each
-packet contains an identifier, a sequence number, a sample index and a test
-value (\texttt{challenge3.cpp}). This let us receive a signal from a separate
-device instead of using the Pluto as both transmitter and receiver.
+SDR to receive them. The final firmware is in the \texttt{firmware} folder
+(\texttt{firmware.cpp}). The ESP32 sends unencrypted ESP-NOW broadcast frames
+on Wi-Fi channel 7, centred at \(2442~\mathrm{MHz}\), with a fixed PHY rate of
+\(6~\mathrm{Mbit/s}\) (OFDM). It sends one packet every \(250~\mathrm{ms}\).
+Each packet contains a magic number (\texttt{0x5246}), a 32-bit sequence
+number, a sample index and a test value taken from the table
+\(\{120, 240, 360, 480\}\). This let us receive a signal from a separate
+device instead of using the Pluto as both transmitter and receiver. Because
+the packets are short bursts separated by silence, a capture of the Pluto
+may or may not contain one; Phase 2 takes this into account.
 
 The Pluto must be tuned to the ESP32 frequency and use a suitable sample rate
 and bandwidth. The raw-I/Q example shows how to capture samples
 (\texttt{data\_recovery.py}). Its default frequency is \(2.4~\mathrm{GHz}\);
-for ESP32 channel 1, it must be changed to \(2.412~\mathrm{GHz}\). Capturing
+for ESP32 channel 7, it must be changed to \(2.442~\mathrm{GHz}\). Capturing
 the signal and decoding the ESP-NOW data are separate steps.
 
 \subsection{Acquiring I/Q samples}

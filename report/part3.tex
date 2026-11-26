@@ -2,7 +2,8 @@
 
 In Phase 2, we use the phase difference between two antennas to estimate the
 direction of arrival (DoA) of a signal. The current program uses two receive
-channels to estimate this angle (\texttt{decode.py}). It is a first step
+channels to estimate this angle (\texttt{decode\_V2.py}), after a calibration
+step (\texttt{calibration.py}). It is a first step
 towards beamforming and source tracking. It is not yet a complete system.
 
 \subsection{Principle of phase-based direction estimation}
@@ -35,48 +36,113 @@ depends on the antenna spacing, calibration and angle range.
 
 \subsection{Two-channel acquisition and signal processing}
 
-The program sets up two receive channels and reads both signals at the same
-time. It uses a \(2.437~\mathrm{GHz}\) signal, a sample rate of
-\(2~\mathrm{MSample/s}\) and buffers of \(16{,}384\) samples
-(\texttt{decode.py}). The receiver is tuned \(200~\mathrm{kHz}\) below the
-expected signal frequency. This moves the tone away from zero frequency in
-the sampled signal.
+The program \texttt{decode\_V2.py} sets up two receive channels of the Pluto
+and reads both signals at the same time. The Pluto is tuned directly to the
+centre of the ESP32 channel, \(f_c = 2.442~\mathrm{GHz}\) (channel 7, as in
+\texttt{firmware.cpp}), with a sample rate of \(3~\mathrm{MSample/s}\), a
+fixed receive gain of \(10~\mathrm{dB}\) on both channels and buffers of
+\(2^{18}\) samples. One buffer lasts about \(87~\mathrm{ms}\). The distance
+\(d\) between the two antennas is entered by the user when the program
+starts.
 
-For each buffer, the program applies a Hann window and computes an FFT for
-each channel. It then finds the strongest frequency bin in the selected band.
-Let \(X_1[k]\) and \(X_2[k]\) be the complex FFT values from channels 1 and 2
-at bin \(k\). We multiply one value by the complex conjugate of the other:
+The source is no longer a continuous tone but the ESP-NOW packets of the
+ESP32, sent every \(250~\mathrm{ms}\). A buffer therefore only contains a
+packet part of the time. For each buffer, the program keeps only the samples
+where the signal is present, that is the set
 \[
-    C[k] = X_2[k]X_1^{*}[k],
+    \mathcal{S} = \left\{ n \;:\; |x_1[n]|^2 + |x_2[n]|^2 > T^2 \right\},
 \]
-Here, \(X_1^{*}[k]\) is the complex conjugate of \(X_1[k]\). The phase
-difference is the angle of this product:
+where \(x_1[n]\) and \(x_2[n]\) are the complex I/Q samples of channels 1 and
+2 and \(T = 20\) is a threshold on the raw amplitude. If fewer than 50 samples
+pass the threshold, the buffer contains no packet and is ignored. Otherwise,
+the program multiplies the samples of channel 2 by the complex conjugate of
+those of channel 1 and sums the products over \(\mathcal{S}\):
 \[
-    \Delta\phi[k]
-    = \arg\!\left(C[k]\right)
-    = \arg\!\left(X_2[k]\right)-\arg\!\left(X_1[k]\right).
+    z = \sum_{n\in\mathcal{S}} x_2[n]\,x_1^{*}[n].
 \]
-The program repeats this calculation for several buffers and averages the
-results. For \(M\) buffers, the average is
+Here, \(x_1^{*}[n]\) is the complex conjugate of \(x_1[n]\). The phase
+difference between the channels is the angle of \(z\):
 \[
-    \overline{C}
-    = \frac{1}{M}\sum_{m=1}^{M}
-      X_{2,m}[k_m]X_{1,m}^{*}[k_m],
+    \Delta\phi_{\mathrm{meas}} = \arg(z).
 \]
-The phase estimate is the angle of this average. Averaging helps reduce noise.
+Summing the products before taking the angle weights each sample by its
+amplitude and averages the noise over thousands of samples. This replaces the
+FFT with a Hann window used in the first version (\texttt{decode.py}), which
+was designed for a continuous tone.
 
-At startup, the program averages 50 measurements to get a calibration value.
-During operation, it averages 10 measurements at a time, removes the
-calibration offset and smooths the phase estimate. It then uses the wavelength
-and antenna spacing to calculate the angle. If the result is outside the
-valid range for the inverse sine, the program reports that the angle is out
-of range.
+\subsection{Calibration}
+
+The two receive paths of the Pluto are not identical. The cables, the
+connectors, the antennas and the receiver itself add a fixed phase offset
+\(\phi_{\mathrm{cal}}\) between channel 2 and channel 1. The measured phase is
+\[
+    \Delta\phi_{\mathrm{meas}} = \Delta\phi_{\mathrm{true}} + \phi_{\mathrm{cal}},
+\]
+and a direct use of the formula of the previous section would give a wrong
+angle. A calibration is therefore made at the start of \texttt{decode\_V2.py}.
+It must be done with the ESP32 transmitting from a known reference direction,
+the broadside (\(\theta = 0\)), so that \(\Delta\phi_{\mathrm{true}} = 0\) and
+the measured phase is the offset itself.
+
+The calibration works as follows:
+\begin{enumerate}
+    \item The program captures buffers until \(N_{\mathrm{cal}} = 30\) of them
+    contain a packet (with a time limit of 60 seconds). Buffers without packet
+    are ignored. If fewer than 5 valid captures are obtained, the program stops
+    with an error.
+    \item For each valid capture, it computes \(z\) as above and normalises it
+    to a unit vector \(u_i = z_i/|z_i|\). Averaging unit vectors rather than
+    angles avoids the problem of the \(\pm\pi\) wrap-around, and the
+    amplitude of the packet no longer matters.
+    \item It averages the unit vectors and normalises the result:
+    \[
+        g = \frac{\overline{u}}{|\overline{u}|}
+          = e^{j\phi_{\mathrm{cal}}}.
+    \]
+\end{enumerate}
+The program prints the reference phase \(\phi_{\mathrm{cal}}\) in degrees.
+
+The standalone script \texttt{calibration.py} performs the same measurement
+to check the hardware before running the tracking. It uses channel 1 of the
+ESP32 (\(2.412~\mathrm{GHz}\)), a sample rate of \(4~\mathrm{MSample/s}\),
+buffers of \(2^{16}\) samples, a gain of \(20~\mathrm{dB}\) and a LO shifted by
+\(200~\mathrm{kHz}\). It detects a packet when the power is ten times larger
+than the median power of the buffer, and uses 30 packets. It prints the phase
+offset RX2$-$RX1 and a stability indicator \(|\overline{u}|\). This value is
+close to 1 if all captures give the same phase, and drops towards 0 if the
+phase is random (no stable signal or loose connection). Both scripts must use
+the same channel as the firmware.
+
+\subsection{Angle computation}
+
+During operation, the program computes \(z\) for each buffer that contains a
+packet and removes the calibration offset by multiplying by the conjugate of
+\(g\):
+\[
+    z_c = z\,g^{*},
+    \qquad
+    \Delta\phi = \arg(z_c) \in [-\pi,\pi].
+\]
+Let \(k = 2\pi/\lambda\) be the wave number, with \(\lambda = c/f_c\). From
+the phase relation of the previous section,
+\[
+    \sin\theta = \frac{\Delta\phi + 2\pi n}{k\,d},
+\]
+where \(n\) is an integer that accounts for the \(2\pi\) ambiguity of the
+phase. The program tests \(n = -2, \dots, 4\) and keeps the first value for
+which \(|\sin\theta|\le 1.15\). The tolerance above 1 absorbs noise and
+small calibration errors; the value is then limited to \([-1,1]\) before
+calculating \(\theta = \arcsin(\cdot)\). If no value of \(n\) is valid, the
+program prints that the phase is out of range. The result is displayed every
+\(0.3~\mathrm{s}\), with the phase \(\Delta\phi\), the angle \(\theta\) and the
+number of samples used.
 
 \subsection{Effect of antenna spacing}
 
-At \(2.437~\mathrm{GHz}\), the wavelength is about \(0.123~\mathrm{m}\). The
-program uses an antenna spacing of \(0.0615~\mathrm{m}\), about half a
-wavelength (\texttt{decode.py}). A larger spacing gives a larger phase
+At \(2.442~\mathrm{GHz}\), the wavelength is about \(0.1228~\mathrm{m}\). The
+spacing \(d\) is entered when the program starts; a spacing of about half a
+wavelength, \(0.0614~\mathrm{m}\), is the natural choice
+(\texttt{decode\_V2.py}). A larger spacing gives a larger phase
 change for the same change in angle, which can make the measurement more
 sensitive. But if the spacing is too large, different angles can give the
 same measured phase. This makes the angle unclear. A spacing no greater than
@@ -84,14 +150,46 @@ half a wavelength helps avoid this problem over the main angle range.
 
 We also need to know the spacing accurately and calibrate both receive
 channels. Cables, antennas, receiver differences and reflections can all
-change the measured phase. The program corrects a fixed phase difference
-between the channels. We still need to choose and test a known reference
-direction.
+change the measured phase. The calibration described above removes the fixed
+phase difference between the channels, provided the reference direction is
+respected. If \(d>\lambda/2\), several values of \(n\) can give a valid angle
+and the program keeps the first one found, so the result may be ambiguous.
 
 \subsection{Code example}
 
+The ESP32 firmware (\texttt{firmware/firmware.cpp}) sends one broadcast
+packet every \(250~\mathrm{ms}\) on channel 7 at \(6~\mathrm{Mbit/s}\):
 
+\begin{verbatim}
+esp_wifi_set_channel(7, WIFI_SECOND_CHAN_NONE);
+esp_wifi_config_espnow_rate(WIFI_IF_STA, WIFI_PHY_RATE_6M);
+...
+esp_now_send(broadcast_address, (uint8_t *)&packet, sizeof(packet));
+delay(250);
+\end{verbatim}
 
-Le firmware de l'ESP32, il est où, wesh ?
+The calibration and the angle computation of \texttt{decode\_V2.py} are:
+
+\begin{verbatim}
+def phase_masquee(x1, x2):
+    p = np.abs(x1)**2 + np.abs(x2)**2
+    mask = p > SEUIL**2
+    if mask.sum() < 50:
+        return None, 0
+    return np.sum(x2[mask] * np.conj(x1[mask])), int(mask.sum())
+
+# calibration
+unit.append(z / abs(z))
+cal = np.mean(unit); cal = cal / abs(cal)
+
+# measurement
+zc = z * np.conj(cal)
+dphi = math.atan2(zc.imag, zc.real)
+for n in range(-2, 5):
+    c = (dphi + 2*math.pi*n) / (k*D)
+    if abs(c) <= 1.15:
+        angle = math.degrees(math.asin(max(-1.0, min(1.0, c))))
+        break
+\end{verbatim}
 
 \subsection{Results}
